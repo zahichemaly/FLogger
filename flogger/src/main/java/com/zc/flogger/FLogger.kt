@@ -25,6 +25,7 @@ abstract class FLogger(private val context: Context) {
     open val applicationTag: String = ""
     open val logsFilePath: String = LOG_FILE_PATH
     open val maxFilesAllowed: Int = MAX_FILES_ALLOWED
+    open val logRetentionPolicy: LogRetentionPolicy = LogRetentionPolicy.FIXED
 
     private var logHeaderLines: List<String> = emptyList()
 
@@ -85,11 +86,13 @@ abstract class FLogger(private val context: Context) {
             val filesCount = files.size
             Log.d(TAG, "Log files found: $filesCount / $maxFilesAllowed")
 
-            if (filesCount == maxFilesAllowed) {
-                val oldestFile = files.minByOrNull { it.lastModified() }
-                val isDeleted = oldestFile?.delete()
-                if (isDeleted == true) {
-                    Log.d(TAG, "Deleting log file ${oldestFile.absolutePath}")
+            if (logRetentionPolicy != LogRetentionPolicy.DISABLED) {
+                if (logRetentionPolicy == LogRetentionPolicy.LATEST_ONLY || filesCount == maxFilesAllowed) {
+                    val oldestFile = files.minByOrNull { it.lastModified() }
+                    val isDeleted = oldestFile?.delete()
+                    if (isDeleted == true) {
+                        Log.d(TAG, "Deleting log file ${oldestFile.absolutePath}")
+                    }
                 }
             }
 
