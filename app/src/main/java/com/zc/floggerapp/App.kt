@@ -2,6 +2,7 @@ package com.zc.floggerapp
 
 import android.app.Application
 import com.zc.flogger.FLog
+import com.zc.flogger.LogRetentionPolicy
 
 /**
  * Created by Zahi Chemaly on 4/25/2024.
@@ -14,8 +15,11 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        val logger = AppLogger(this)
-        FLog.setup(logger)
+        FLog.configure(this)
+            .setApplicationTag("testo")
+            .setLogsPath("mylogs")
+            .setRetentionPolicy(LogRetentionPolicy.FIXED)
+            .setLogsRetentionThreshold(10)
         repeat(100) { index ->
             FLog.log(TAG, "Hello from the other side $index")
         }

@@ -1,5 +1,6 @@
 package com.zc.flogger
 
+import android.content.Context
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.storage.storage
@@ -14,8 +15,27 @@ object FLog {
     private lateinit var _fLogger: Lazy<FLogger>
     private val fLogger get() = _fLogger.value
 
-    fun setup(fLogger: FLogger) {
-        _fLogger = lazy { fLogger }
+    fun configure(context: Context): Configuration {
+        return Configuration().apply {
+            _fLogger = lazy { FLogger(context) }
+        }
+    }
+
+    class Configuration internal constructor() {
+        fun setApplicationTag(tag: String): Configuration =
+            this.apply { fLogger.applicationTag = tag }
+
+        fun setLogsPath(path: String): Configuration =
+            this.apply { fLogger.logsFilePath = path }
+
+        fun setRetentionPolicy(policy: LogRetentionPolicy): Configuration =
+            this.apply { fLogger.logRetentionPolicy = policy }
+
+        /**
+         * Applies only if [LogRetentionPolicy] is set to [LogRetentionPolicy.FIXED].
+         */
+        fun setLogsRetentionThreshold(threshold: Int): Configuration =
+            this.apply { fLogger.maxFilesAllowed = threshold }
     }
 
     /***

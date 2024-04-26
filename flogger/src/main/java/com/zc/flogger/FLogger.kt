@@ -20,12 +20,12 @@ import java.util.Date
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-abstract class FLogger(private val context: Context) {
+internal class FLogger(private val context: Context) {
 
-    open val applicationTag: String = ""
-    open val logsFilePath: String = LOG_FILE_PATH
-    open val maxFilesAllowed: Int = MAX_FILES_ALLOWED
-    open val logRetentionPolicy: LogRetentionPolicy = LogRetentionPolicy.FIXED
+    var applicationTag: String = ""
+    var logsFilePath: String = LOG_FILE_PATH
+    var maxFilesAllowed: Int = MAX_FILES_ALLOWED
+    var logRetentionPolicy: LogRetentionPolicy = LogRetentionPolicy.FIXED
 
     private var logHeaderLines: List<String> = emptyList()
 
@@ -50,7 +50,9 @@ abstract class FLogger(private val context: Context) {
         }
     }
 
-    abstract fun buildLog(tag: String?, message: String): String
+    private fun buildLog(tag: String?, message: String): String {
+        return "[$tag] ~> $message"
+    }
 
     private fun logInternal(logMessage: LogMessage) {
         try {
@@ -69,7 +71,7 @@ abstract class FLogger(private val context: Context) {
 
     @Throws
     private fun getExistingLogFileOrCreate(): File {
-        // create log folder if it does not exist
+        // configure log folder if it does not exist
         val logPath = getLogPath()
         val logFolder = File(logPath)
         if (!logFolder.exists()) {
@@ -77,7 +79,7 @@ abstract class FLogger(private val context: Context) {
             logFolder.mkdir()
         }
 
-        // create log file if it does not exist
+        // configure log file if it does not exist
         val logFileName = getLogFileName() + ".log"
         val logFile = File(logPath, logFileName)
 
@@ -96,7 +98,7 @@ abstract class FLogger(private val context: Context) {
                 }
             }
 
-            // create file
+            // configure file
             Log.d(TAG, "Creating new log file $logFileName")
             logFile.createNewFile()
 
