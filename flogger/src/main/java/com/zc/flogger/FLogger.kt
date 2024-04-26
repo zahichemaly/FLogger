@@ -3,7 +3,14 @@ package com.zc.flogger
 import android.content.Context
 import android.util.Log
 import com.zc.flogger.extensions.toFormat
+import com.zc.flogger.models.LogMessage
 import com.zc.flogger.utils.ZipManager
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
@@ -21,25 +28,42 @@ abstract class FLogger(private val context: Context) {
 
     private var logHeaderLines: List<String> = emptyList()
 
-    fun log(tag: String?, message: String) {
-        logInternal(tag, message)
+    private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, ex ->
+        Log.e(TAG, "Coroutine error: ${ex.stackTraceToString()}")
+    }
+
+    private val channel = Channel<LogMessage>(capacity = Channel.UNLIMITED).apply {
+        mainScope.launch(coroutineExceptionHandler) {
+            consumeEach { logMessage ->
+                logInternal(logMessage)
+            }
+        }
+    }
+
+    fun log(tag: String, message: String) {
+        val logMessage = LogMessage(tag, message)
+        val result = channel.trySend(LogMessage(tag, message))
+        if (!result.isSuccess) {
+            Log.e(TAG, "Failed to send log message $logMessage")
+        }
     }
 
     abstract fun buildLog(tag: String?, message: String): String
 
-    private fun logInternal(tag: String?, message: String) {
+    private fun logInternal(logMessage: LogMessage) {
         try {
             val logFile = getExistingLogFileOrCreate()
-            writeToLogFile(logFile, buildLog(tag, message))
+            writeToLogFile(logFile, buildLog(logMessage.tag, logMessage.message))
         } catch (ex: Exception) {
-            Log.e(TAG, ex.stackTraceToString())
+            Log.e(TAG, "Failed to log message $logMessage: ${ex.stackTraceToString()}")
         }
     }
 
     private fun getLogPath(): String =
         "${context.externalCacheDir}/$logsFilePath"
 
-    open fun getLogFileName(): String =
+    private fun getLogFileName(): String =
         "${applicationTag}_${Date().toFormat(LOG_FILE_DATE_FORMAT)}"
 
     @Throws

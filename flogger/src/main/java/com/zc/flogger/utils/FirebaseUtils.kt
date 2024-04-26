@@ -7,7 +7,7 @@ import com.zc.flogger.TAG
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-object FirebaseUtils {
+internal object FirebaseUtils {
 
     fun isFirebaseInitialized(): Boolean {
         return try {

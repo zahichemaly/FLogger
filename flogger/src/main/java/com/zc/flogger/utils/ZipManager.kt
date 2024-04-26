@@ -34,7 +34,7 @@ internal object ZipManager {
             Log.d(TAG, "Zipped log folder $inputPath to ${outputPath}/${archiveFileName}")
             return archiveFile
         } catch (ex: Exception) {
-            Log.e(TAG, ex.stackTraceToString())
+            Log.e(TAG, "Failed to zip folder: ${ex.stackTraceToString()}")
             return null
         }
     }

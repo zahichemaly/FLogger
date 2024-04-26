@@ -21,7 +21,7 @@ object FLog {
     /***
      * Make sure that [FLogger] is initialized first!
      */
-    fun log(tag: String?, message: String) {
+    fun log(tag: String, message: String) {
         fLogger.log(tag, message)
     }
 
