@@ -6,5 +6,9 @@ package com.zc.flogger.models
 internal data class LogMessage(
     val tag: String,
     val message: String,
-    val level: LogLevel = LogLevel.DEBUG
-)
+    val level: LogLevel = LogLevel.DEBUG,
+    val thread: Thread = Thread.currentThread(),
+    val activeStackTraceElementIndex: Int = -1,
+) {
+    val activeStackTraceElement get() = thread.stackTrace[activeStackTraceElementIndex]
+}

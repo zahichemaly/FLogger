@@ -1,7 +1,9 @@
 package com.zc.flogger.format
 
 import com.zc.flogger.DEFAULT_DATE_FORMAT
+import com.zc.flogger.WRAP_MAX_LENGTH
 import com.zc.flogger.extensions.toFormat
+import com.zc.flogger.extensions.wrap
 import com.zc.flogger.models.LogMessage
 
 /**
@@ -22,10 +24,10 @@ internal sealed interface LogExpression {
         }
     }
 
-    data class Date(private val dateFormat: String) : LogExpression {
+    data class Date(private val format: String) : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
             val now = java.util.Date()
-            return now.toFormat(dateFormat) ?: now.toFormat(DEFAULT_DATE_FORMAT) ?: ""
+            return now.toFormat(format) ?: now.toFormat(DEFAULT_DATE_FORMAT) ?: ""
         }
     }
 
@@ -43,6 +45,46 @@ internal sealed interface LogExpression {
                 "name" -> logMessage.level.name
                 else -> logMessage.level.ordinal.toString()
             }
+        }
+    }
+
+    data class Thread(private val format: String) : LogExpression {
+        override fun interpret(logMessage: LogMessage): String {
+            return when (format) {
+                "id" -> logMessage.thread.id.toString()
+                "name" -> logMessage.thread.name.toString()
+                else -> logMessage.thread.id.toString()
+            }
+        }
+    }
+
+    data class ClassName(private val format: String) : LogExpression {
+
+        override fun interpret(logMessage: LogMessage): String {
+            val fullClassName = logMessage.activeStackTraceElement.className
+            return when (format) {
+                "full" -> logMessage.activeStackTraceElement.className
+                "simple" -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
+                else -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
+            }
+        }
+    }
+
+    data class FileName(private val maxLength: Int = WRAP_MAX_LENGTH) : LogExpression {
+        override fun interpret(logMessage: LogMessage): String {
+            return logMessage.activeStackTraceElement.fileName.wrap(maxLength)
+        }
+    }
+
+    data class MethodName(private val maxLength: Int = WRAP_MAX_LENGTH) : LogExpression {
+        override fun interpret(logMessage: LogMessage): String {
+            return logMessage.activeStackTraceElement.methodName.wrap(maxLength)
+        }
+    }
+
+    data object LineNumber : LogExpression {
+        override fun interpret(logMessage: LogMessage): String {
+            return logMessage.activeStackTraceElement.lineNumber.toString()
         }
     }
 }
