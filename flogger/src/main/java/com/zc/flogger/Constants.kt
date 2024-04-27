@@ -8,5 +8,6 @@ internal const val TAG = "FLogger"
 internal const val RSV_WORD_TAG = "tag"
 internal const val RSV_WORD_MESSAGE = "message"
 internal const val RSV_WORD_DATE = "date"
+internal const val RSV_WORD_LEVEL = "level"
 
 internal const val DEFAULT_DATE_FORMAT = "dd-MM-yyyy-HH:mm:ss"

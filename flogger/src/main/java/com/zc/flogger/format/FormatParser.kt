@@ -1,9 +1,10 @@
 package com.zc.flogger.format
 
 import com.zc.flogger.RSV_WORD_DATE
+import com.zc.flogger.RSV_WORD_LEVEL
 import com.zc.flogger.RSV_WORD_MESSAGE
 import com.zc.flogger.RSV_WORD_TAG
-import com.zc.flogger.extensions.extractFromRegex
+import com.zc.flogger.extensions.extractFromBrackets
 import com.zc.flogger.models.LogMessage
 
 /**
@@ -31,9 +32,15 @@ internal class FormatParser(private val format: String) {
                         }
 
                         reservedWord.startsWith("${RSV_WORD_DATE}{", ignoreCase = true) -> {
-                            val dateFormat = reservedWord.extractFromRegex("\\{([^{}]+)\\}") ?: ""
+                            val dateFormat = reservedWord.extractFromBrackets() ?: ""
                             expressions.add(LogExpression.Date(dateFormat))
                             index += RSV_WORD_DATE.length + dateFormat.length + 3
+                        }
+
+                        reservedWord.startsWith("${RSV_WORD_LEVEL}{", ignoreCase = true) -> {
+                            val logFormat = reservedWord.extractFromBrackets() ?: ""
+                            expressions.add(LogExpression.Level(logFormat))
+                            index += RSV_WORD_LEVEL.length + logFormat.length + 3
                         }
 
                         else -> {

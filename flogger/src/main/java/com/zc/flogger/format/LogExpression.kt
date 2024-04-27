@@ -34,4 +34,15 @@ internal sealed interface LogExpression {
             return token
         }
     }
+
+    data class Level(private val format: String) : LogExpression {
+        override fun interpret(logMessage: LogMessage): String {
+            return when (format) {
+                "number" -> logMessage.level.ordinal.toString()
+                "letter" -> logMessage.level.name.first().toString()
+                "name" -> logMessage.level.name
+                else -> logMessage.level.ordinal.toString()
+            }
+        }
+    }
 }

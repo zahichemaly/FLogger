@@ -6,4 +6,5 @@ package com.zc.flogger.models
 internal data class LogMessage(
     val tag: String,
     val message: String,
+    val level: LogLevel = LogLevel.DEBUG
 )
