@@ -10,3 +10,6 @@ private fun String.extractFromRegex(regex: String): String? {
 
 internal fun String.extractFromBrackets(): String? =
     extractFromRegex(REGEX_BRACKETS)
+
+internal fun String.wrap(maxLength: Int): String =
+    substring(0, length.coerceAtMost(maxLength))

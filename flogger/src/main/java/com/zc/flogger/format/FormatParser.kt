@@ -31,13 +31,13 @@ internal class FormatParser(private val format: String) {
                             index += RSV_WORD_MESSAGE.length + 1
                         }
 
-                        reservedWord.startsWith("${RSV_WORD_DATE}{", ignoreCase = true) -> {
+                        reservedWord.startsWith("$RSV_WORD_DATE{", ignoreCase = true) -> {
                             val dateFormat = reservedWord.extractFromBrackets() ?: ""
                             expressions.add(LogExpression.Date(dateFormat))
                             index += RSV_WORD_DATE.length + dateFormat.length + 3
                         }
 
-                        reservedWord.startsWith("${RSV_WORD_LEVEL}{", ignoreCase = true) -> {
+                        reservedWord.startsWith("$RSV_WORD_LEVEL{", ignoreCase = true) -> {
                             val logFormat = reservedWord.extractFromBrackets() ?: ""
                             expressions.add(LogExpression.Level(logFormat))
                             index += RSV_WORD_LEVEL.length + logFormat.length + 3
