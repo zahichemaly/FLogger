@@ -14,6 +14,6 @@ internal fun Date.toFormat(format: String): String? {
         val sdf = SimpleDateFormat(format, locale)
         sdf.format(this)
     } catch (ex: Exception) {
-        ""
+        null
     }
 }
