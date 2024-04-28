@@ -10,11 +10,11 @@ import com.zc.flogger.models.LogMessage
 /**
  * Created by Zahi Chemaly on 4/27/2024.
  */
-internal class FormatParser(private val format: String) {
+internal class FormatParser(format: String) {
+    private val expressions = mutableListOf<LogExpression>()
 
-    fun parse(logMessage: LogMessage): String {
+    init {
         var index = 0
-        val expressions = mutableListOf<LogExpression>()
         while (index < format.length) {
             val char = format[index]
             if (char == '%') {
@@ -54,6 +54,8 @@ internal class FormatParser(private val format: String) {
                 index++
             }
         }
-        return expressions.joinToString(separator = "") { it.interpret(logMessage) }
     }
+
+    fun parse(logMessage: LogMessage): String =
+        expressions.joinToString(separator = "") { it.interpret(logMessage) }
 }

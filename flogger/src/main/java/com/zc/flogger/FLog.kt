@@ -1,78 +1,74 @@
 package com.zc.flogger
 
 import android.content.Context
-import android.util.Log
-import com.google.firebase.Firebase
-import com.google.firebase.storage.storage
-import com.google.firebase.storage.storageMetadata
-import com.zc.flogger.utils.FirebaseUtils
-import java.io.IOException
+import com.zc.flogger.format.FormatParser
+import com.zc.flogger.logging.ConsoleLogger
+import com.zc.flogger.logging.FileLogger
+import com.zc.flogger.logging.LoggerPipeline
+import com.zc.flogger.models.LogLevel
+import com.zc.flogger.models.LogMessage
+import java.io.PrintWriter
+import java.io.StringWriter
 
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
 object FLog {
-    private lateinit var _fLogger: Lazy<FLogger>
-    private val fLogger get() = _fLogger.value
+    private lateinit var loggerPipeline: LoggerPipeline
+    private lateinit var formatParser: FormatParser
 
-    fun configure(context: Context): Configuration {
-        return Configuration().apply {
-            _fLogger = lazy { FLogger(context) }
+    fun configure(context: Context, format: String) {
+        loggerPipeline = LoggerPipeline()
+        formatParser = FormatParser(format)
+        loggerPipeline.add(ConsoleLogger())
+        loggerPipeline.add(FileLogger(context))
+    }
+
+    private fun getElementIndex(stackTrace: Array<StackTraceElement>?): Int {
+        if (stackTrace == null) return 0
+        for (i in 2..stackTrace.size) {
+            val className = stackTrace[i].className ?: ""
+            if (className.contains(this.javaClass.simpleName)) continue
+            return i
+        }
+        return 0
+    }
+
+    private fun addExceptionIfNotNull(t: Throwable?, result: StringBuilder) {
+        if (t != null) {
+            val sw = StringWriter()
+            val pw = PrintWriter(sw)
+            t.printStackTrace(pw)
+            pw.flush()
+            result.append("\n Throwable: ")
+            result.append(sw.toString())
         }
     }
 
-    class Configuration internal constructor() {
-        fun setApplicationTag(tag: String): Configuration =
-            this.apply { fLogger.applicationTag = tag }
+    private fun log(tag: String, message: String, logLevel: LogLevel) {
+        val thread = Thread.currentThread()
+        val stackTrace = thread.stackTrace
 
-        fun setLogsPath(path: String): Configuration =
-            this.apply { fLogger.logsFilePath = path }
+        val elementIndex: Int = getElementIndex(stackTrace)
+        if (elementIndex == 0) return
 
-        fun setRetentionPolicy(policy: LogRetentionPolicy): Configuration =
-            this.apply { fLogger.logRetentionPolicy = policy }
+        val logMessage = LogMessage(
+            tag = tag,
+            message = message,
+            thread = thread,
+            level = logLevel,
+            activeStackTraceElementIndex = elementIndex
+        )
 
-        /**
-         * Applies only if [LogRetentionPolicy] is set to [LogRetentionPolicy.FIXED].
-         */
-        fun setLogsRetentionThreshold(threshold: Int): Configuration =
-            this.apply { fLogger.maxFilesAllowed = threshold }
+        val evaluatedMessage = formatParser.parse(logMessage)
+        loggerPipeline.log(tag, evaluatedMessage, logLevel)
     }
 
-    /***
-     * Make sure that [FLogger] is initialized first!
-     */
-    fun log(tag: String, message: String) {
-        fLogger.log(tag, message)
+    fun debug(tag: String, message: String) {
+        log(tag, message, LogLevel.DEBUG)
     }
 
-    fun uploadToFirebaseStorage(
-        firebaseFolder: String,
-        onLoading: () -> Unit = {},
-        onSuccess: () -> Unit = {},
-        onError: (Exception) -> Unit = {},
-    ) {
-        if (!FirebaseUtils.isFirebaseInitialized()) return
-        fLogger.zipLogs()?.let { file ->
-            val storage = Firebase.storage
-            val storageRef = storage.reference
-            val fileName = file.name
-            val fileRef = storageRef.child("$firebaseFolder/$fileName")
-            val metadata = storageMetadata {
-                contentType = "application/zip"
-            }
-            file.inputStream().use { inputStream ->
-                onLoading.invoke()
-                val task = fileRef.putStream(inputStream, metadata)
-                task.addOnSuccessListener {
-                    Log.d(TAG, "Upload successful")
-                    onSuccess.invoke()
-                }.addOnFailureListener { ex ->
-                    Log.e(TAG, "Upload successful")
-                    onError.invoke(ex)
-                }
-            }
-        } ?: run {
-            onError.invoke(IOException("Zip file is invalid or does not exist."))
-        }
+    fun info(tag: String, message: String) {
+        log(tag, message, LogLevel.INFO)
     }
 }

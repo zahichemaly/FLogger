@@ -12,4 +12,4 @@ internal const val RSV_WORD_LEVEL = "level"
 
 internal const val DEFAULT_DATE_FORMAT = "dd-MM-yyyy-HH:mm:ss"
 
-internal const val WRAP_MAX_LENGTH = 25
+internal const val WRAP_MAX_LENGTH = 23

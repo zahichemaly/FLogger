@@ -1,9 +1,18 @@
-package com.zc.flogger
+package com.zc.flogger.logging
 
 import android.content.Context
 import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.storage.storage
+import com.google.firebase.storage.storageMetadata
+import com.zc.flogger.LOG_FILE_DATE_FORMAT
+import com.zc.flogger.LOG_FILE_PATH
+import com.zc.flogger.MAX_FILES_ALLOWED
+import com.zc.flogger.TAG
 import com.zc.flogger.extensions.toFormat
+import com.zc.flogger.models.LogLevel
 import com.zc.flogger.models.LogMessage
+import com.zc.flogger.utils.FirebaseUtils
 import com.zc.flogger.utils.ZipManager
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -20,12 +29,12 @@ import java.util.Date
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-internal class FLogger(private val context: Context) {
+internal class FileLogger(private val context: Context) : BaseLogger() {
 
     var applicationTag: String = ""
     var logsFilePath: String = LOG_FILE_PATH
     var maxFilesAllowed: Int = MAX_FILES_ALLOWED
-    var logRetentionPolicy: LogRetentionPolicy = LogRetentionPolicy.FIXED
+    var fileRetentionPolicy: FileRetentionPolicy = FileRetentionPolicy.FIXED
 
     private var logHeaderLines: List<String> = emptyList()
 
@@ -42,16 +51,16 @@ internal class FLogger(private val context: Context) {
         }
     }
 
-    fun log(tag: String, message: String) {
-        val logMessage = LogMessage(tag, message)
+    override fun handle(tag: String, message: String, logLevel: LogLevel) {
+        val logFileMessage = LogMessage(tag, message)
         val result = channel.trySend(LogMessage(tag, message))
         if (!result.isSuccess) {
-            Log.e(TAG, "Failed to send log message $logMessage")
+            Log.e(TAG, "Failed to send log message $logFileMessage")
         }
     }
 
     private fun buildLog(tag: String?, message: String): String {
-        return "[$tag] ~> $message"
+        return "$tag $message"
     }
 
     private fun logInternal(logMessage: LogMessage) {
@@ -88,8 +97,8 @@ internal class FLogger(private val context: Context) {
             val filesCount = files.size
             Log.d(TAG, "Log files found: $filesCount / $maxFilesAllowed")
 
-            if (logRetentionPolicy != LogRetentionPolicy.DISABLED) {
-                if (logRetentionPolicy == LogRetentionPolicy.LATEST_ONLY || filesCount == maxFilesAllowed) {
+            if (fileRetentionPolicy != FileRetentionPolicy.DISABLED) {
+                if (fileRetentionPolicy == FileRetentionPolicy.LATEST_ONLY || filesCount == maxFilesAllowed) {
                     val oldestFile = files.minByOrNull { it.lastModified() }
                     val isDeleted = oldestFile?.delete()
                     if (isDeleted == true) {
@@ -132,5 +141,36 @@ internal class FLogger(private val context: Context) {
 
     fun zipLogs(): File? {
         return ZipManager.zipFolder(getLogPath(), context.externalCacheDir.toString(), getLogFileName())
+    }
+
+    fun uploadToFirebaseStorage(
+        firebaseFolder: String,
+        onLoading: () -> Unit = {},
+        onSuccess: () -> Unit = {},
+        onError: (Exception) -> Unit = {},
+    ) {
+        if (!FirebaseUtils.isFirebaseInitialized()) return
+        zipLogs()?.let { file ->
+            val storage = Firebase.storage
+            val storageRef = storage.reference
+            val fileName = file.name
+            val fileRef = storageRef.child("$firebaseFolder/$fileName")
+            val metadata = storageMetadata {
+                contentType = "application/zip"
+            }
+            file.inputStream().use { inputStream ->
+                onLoading.invoke()
+                val task = fileRef.putStream(inputStream, metadata)
+                task.addOnSuccessListener {
+                    Log.d(TAG, "Upload successful")
+                    onSuccess.invoke()
+                }.addOnFailureListener { ex ->
+                    Log.e(TAG, "Upload successful")
+                    onError.invoke(ex)
+                }
+            }
+        } ?: run {
+            onError.invoke(IOException("Zip file is invalid or does not exist."))
+        }
     }
 }

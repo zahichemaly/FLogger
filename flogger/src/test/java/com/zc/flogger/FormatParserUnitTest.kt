@@ -24,7 +24,6 @@ class FormatParserUnitTest {
         val actual = FormatParser(logFormat).parse(logMessage)
 
         val expected = "$date [MYAPP] [$tag]: $message"
-        debug("my message")
         assertEquals(expected, actual)
     }
 

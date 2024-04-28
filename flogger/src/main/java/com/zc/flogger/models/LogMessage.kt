@@ -10,5 +10,5 @@ internal data class LogMessage(
     val thread: Thread = Thread.currentThread(),
     val activeStackTraceElementIndex: Int = -1,
 ) {
-    val activeStackTraceElement get() = thread.stackTrace[activeStackTraceElementIndex]
+    val activeStackTraceElement: StackTraceElement get() = thread.stackTrace[activeStackTraceElementIndex]
 }
