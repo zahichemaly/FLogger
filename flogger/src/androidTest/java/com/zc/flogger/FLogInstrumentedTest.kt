@@ -15,7 +15,9 @@ class FLogInstrumentedTest {
     @Before
     fun setupFLog() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        FLog.configure(context, "[%tag] [%level{name}]: %message")
+        FLog.Configuration()
+            .withConsoleLogger("%linenumber %methodname{3} %filename{10}", "%message")
+            .withFileLogger(context, "[%tag] [%level{name}]: %message")
     }
 
     @Test

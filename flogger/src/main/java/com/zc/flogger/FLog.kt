@@ -1,7 +1,6 @@
 package com.zc.flogger
 
 import android.content.Context
-import com.zc.flogger.format.FormatParser
 import com.zc.flogger.logging.ConsoleLogger
 import com.zc.flogger.logging.FileLogger
 import com.zc.flogger.logging.LoggerPipeline
@@ -15,13 +14,21 @@ import java.io.StringWriter
  */
 object FLog {
     private lateinit var loggerPipeline: LoggerPipeline
-    private lateinit var formatParser: FormatParser
 
-    fun configure(context: Context, format: String) {
-        loggerPipeline = LoggerPipeline()
-        formatParser = FormatParser(format)
-        loggerPipeline.add(ConsoleLogger())
-        loggerPipeline.add(FileLogger(context))
+    class Configuration {
+        init {
+            loggerPipeline = LoggerPipeline()
+        }
+
+        fun withFileLogger(context: Context, format: String): Configuration {
+            loggerPipeline.add(FileLogger(context, format))
+            return this
+        }
+
+        fun withConsoleLogger(tagFormat: String, messageFormat: String): Configuration {
+            loggerPipeline.add(ConsoleLogger(tagFormat, messageFormat))
+            return this
+        }
     }
 
     private fun getElementIndex(stackTrace: Array<StackTraceElement>?): Int {
@@ -60,8 +67,7 @@ object FLog {
             activeStackTraceElementIndex = elementIndex
         )
 
-        val evaluatedMessage = formatParser.parse(logMessage)
-        loggerPipeline.log(tag, evaluatedMessage, logLevel)
+        loggerPipeline.log(logMessage)
     }
 
     fun debug(tag: String, message: String) {

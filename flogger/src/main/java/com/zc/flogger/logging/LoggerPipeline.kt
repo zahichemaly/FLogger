@@ -1,6 +1,6 @@
 package com.zc.flogger.logging
 
-import com.zc.flogger.models.LogLevel
+import com.zc.flogger.models.LogMessage
 
 /**
  * Created by Zahi Chemaly on 4/28/2024.
@@ -20,7 +20,7 @@ internal class LoggerPipeline : Logger {
         return this
     }
 
-    override fun log(tag: String, message: String, logLevel: LogLevel) {
-        first?.handle(tag, message, logLevel)
+    override fun log(logMessage: LogMessage) {
+        first?.handle(logMessage)
     }
 }

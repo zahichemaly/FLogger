@@ -70,4 +70,19 @@ class FormatParserUnitTest {
 
         assertEquals(expected, actual)
     }
+
+    @Test
+    fun is_class_name_correct() {
+        val tag = "API"
+        val message = "This is a log test"
+        val level = LogLevel.INFO
+
+        val logMessage = LogMessage(tag, message, level)
+        val logFormat = "[%linenumber]: %message"
+        val actual = FormatParser(logFormat).parse(logMessage)
+
+        val expected = "[$tag] [${level.name}]: $message"
+
+        assertEquals(expected, actual)
+    }
 }

@@ -1,9 +1,17 @@
 package com.zc.flogger.format
 
+import com.zc.flogger.DEFAULT_DATE_FORMAT
+import com.zc.flogger.RSV_WORD_CLASS_NAME
 import com.zc.flogger.RSV_WORD_DATE
+import com.zc.flogger.RSV_WORD_FILE_NAME
 import com.zc.flogger.RSV_WORD_LEVEL
+import com.zc.flogger.RSV_WORD_LINE_NUMBER
 import com.zc.flogger.RSV_WORD_MESSAGE
+import com.zc.flogger.RSV_WORD_METHOD_NAME
 import com.zc.flogger.RSV_WORD_TAG
+import com.zc.flogger.RSV_WORD_THREAD
+import com.zc.flogger.WRAP_LENGTH_DISABLED
+import com.zc.flogger.extensions.extractAllFromBrackets
 import com.zc.flogger.extensions.extractFromBrackets
 import com.zc.flogger.models.LogMessage
 
@@ -31,16 +39,47 @@ internal class FormatParser(format: String) {
                             index += RSV_WORD_MESSAGE.length + 1
                         }
 
-                        reservedWord.startsWith("$RSV_WORD_DATE{", ignoreCase = true) -> {
-                            val dateFormat = reservedWord.extractFromBrackets() ?: ""
+                        reservedWord.startsWith(RSV_WORD_DATE, ignoreCase = true) -> {
+                            val dateFormat = reservedWord.extractFromBrackets() ?: DEFAULT_DATE_FORMAT
                             expressions.add(LogExpression.Date(dateFormat))
                             index += RSV_WORD_DATE.length + dateFormat.length + 3
                         }
 
-                        reservedWord.startsWith("$RSV_WORD_LEVEL{", ignoreCase = true) -> {
-                            val logFormat = reservedWord.extractFromBrackets() ?: ""
+                        reservedWord.startsWith(RSV_WORD_LEVEL, ignoreCase = true) -> {
+                            val logFormat = reservedWord.extractFromBrackets() ?: "number"
                             expressions.add(LogExpression.Level(logFormat))
                             index += RSV_WORD_LEVEL.length + logFormat.length + 3
+                        }
+
+                        reservedWord.startsWith("$RSV_WORD_THREAD{", ignoreCase = true) -> {
+                            val type = reservedWord.extractFromBrackets() ?: "id"
+                            expressions.add(LogExpression.Thread(type))
+                            index += RSV_WORD_THREAD.length + type.length + 3
+                        }
+
+                        reservedWord.startsWith(RSV_WORD_CLASS_NAME, ignoreCase = true) -> {
+                            val extracted = reservedWord.extractAllFromBrackets()
+                            //todo allow any order between max length and type
+                            index += RSV_WORD_CLASS_NAME.length + 1
+                        }
+
+                        reservedWord.startsWith(RSV_WORD_FILE_NAME, ignoreCase = true) -> {
+                            val maxLengthStr = reservedWord.extractFromBrackets() ?: ""
+                            val maxLength = maxLengthStr.toIntOrNull() ?: WRAP_LENGTH_DISABLED
+                            expressions.add(LogExpression.FileName(maxLength))
+                            index += RSV_WORD_FILE_NAME.length + maxLengthStr.length + 3
+                        }
+
+                        reservedWord.startsWith(RSV_WORD_METHOD_NAME, ignoreCase = true) -> {
+                            val maxLengthStr = reservedWord.extractFromBrackets() ?: ""
+                            val maxLength = maxLengthStr.toIntOrNull() ?: WRAP_LENGTH_DISABLED
+                            expressions.add(LogExpression.MethodName(maxLength))
+                            index += RSV_WORD_METHOD_NAME.length + maxLengthStr.length + 3
+                        }
+
+                        reservedWord.startsWith(RSV_WORD_LINE_NUMBER, ignoreCase = true) -> {
+                            expressions.add(LogExpression.LineNumber)
+                            index += RSV_WORD_LINE_NUMBER.length + 1
                         }
 
                         else -> {

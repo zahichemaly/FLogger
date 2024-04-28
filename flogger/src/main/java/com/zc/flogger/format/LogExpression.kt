@@ -1,7 +1,7 @@
 package com.zc.flogger.format
 
 import com.zc.flogger.DEFAULT_DATE_FORMAT
-import com.zc.flogger.WRAP_MAX_LENGTH
+import com.zc.flogger.WRAP_LENGTH_DISABLED
 import com.zc.flogger.extensions.toFormat
 import com.zc.flogger.extensions.wrap
 import com.zc.flogger.models.LogMessage
@@ -58,25 +58,25 @@ internal sealed interface LogExpression {
         }
     }
 
-    data class ClassName(private val format: String) : LogExpression {
+    data class ClassName(private val maxLength: Int = WRAP_LENGTH_DISABLED, private val format: String) : LogExpression {
 
         override fun interpret(logMessage: LogMessage): String {
             val fullClassName = logMessage.activeStackTraceElement.className
             return when (format) {
-                "full" -> logMessage.activeStackTraceElement.className
-                "simple" -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
-                else -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
+                "full" -> logMessage.activeStackTraceElement.className.wrap(maxLength)
+                "simple" -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1).wrap(maxLength)
+                else -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1).wrap(maxLength)
             }
         }
     }
 
-    data class FileName(private val maxLength: Int = WRAP_MAX_LENGTH) : LogExpression {
+    data class FileName(private val maxLength: Int = WRAP_LENGTH_DISABLED) : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
             return logMessage.activeStackTraceElement.fileName.wrap(maxLength)
         }
     }
 
-    data class MethodName(private val maxLength: Int = WRAP_MAX_LENGTH) : LogExpression {
+    data class MethodName(private val maxLength: Int = WRAP_LENGTH_DISABLED) : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
             return logMessage.activeStackTraceElement.methodName.wrap(maxLength)
         }

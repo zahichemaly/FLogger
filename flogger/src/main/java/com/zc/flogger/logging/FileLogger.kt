@@ -10,7 +10,7 @@ import com.zc.flogger.LOG_FILE_PATH
 import com.zc.flogger.MAX_FILES_ALLOWED
 import com.zc.flogger.TAG
 import com.zc.flogger.extensions.toFormat
-import com.zc.flogger.models.LogLevel
+import com.zc.flogger.format.FormatParser
 import com.zc.flogger.models.LogMessage
 import com.zc.flogger.utils.FirebaseUtils
 import com.zc.flogger.utils.ZipManager
@@ -29,7 +29,7 @@ import java.util.Date
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-internal class FileLogger(private val context: Context) : BaseLogger() {
+internal class FileLogger(private val context: Context, private val format: String) : BaseLogger() {
 
     var applicationTag: String = ""
     var logsFilePath: String = LOG_FILE_PATH
@@ -37,6 +37,8 @@ internal class FileLogger(private val context: Context) : BaseLogger() {
     var fileRetentionPolicy: FileRetentionPolicy = FileRetentionPolicy.FIXED
 
     private var logHeaderLines: List<String> = emptyList()
+
+    private val formatParser = FormatParser(format)
 
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, ex ->
@@ -51,22 +53,21 @@ internal class FileLogger(private val context: Context) : BaseLogger() {
         }
     }
 
-    override fun handle(tag: String, message: String, logLevel: LogLevel) {
-        val logFileMessage = LogMessage(tag, message)
-        val result = channel.trySend(LogMessage(tag, message))
+    override fun handle(logMessage: LogMessage) {
+        val result = channel.trySend(logMessage)
         if (!result.isSuccess) {
-            Log.e(TAG, "Failed to send log message $logFileMessage")
+            Log.e(TAG, "Failed to send log message $logMessage")
         }
     }
 
-    private fun buildLog(tag: String?, message: String): String {
-        return "$tag $message"
+    private fun buildLog(logMessage: LogMessage): String {
+        return formatParser.parse(logMessage)
     }
 
     private fun logInternal(logMessage: LogMessage) {
         try {
             val logFile = getExistingLogFileOrCreate()
-            writeToLogFile(logFile, buildLog(logMessage.tag, logMessage.message))
+            writeToLogFile(logFile, buildLog(logMessage))
         } catch (ex: Exception) {
             Log.e(TAG, "Failed to log message $logMessage: ${ex.stackTraceToString()}")
         }
