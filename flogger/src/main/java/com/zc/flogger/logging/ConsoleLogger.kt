@@ -10,11 +10,11 @@ import com.zc.flogger.models.LogMessage
 /**
  * Created by Zahi Chemaly on 4/28/2024.
  */
-internal class ConsoleLogger(tagFormat: String, messageFormat: String) : BaseLogger() {
+internal class ConsoleLogger(tagFormat: String, messageFormat: String) : Logger {
     private val tagFormatParser = FormatParser(tagFormat)
     private val messageFormatParser = FormatParser(messageFormat)
 
-    override fun handle(logMessage: LogMessage) {
+    override fun log(logMessage: LogMessage) {
         val tag = tagFormatParser.parse(logMessage.copy(tag = "", message = logMessage.tag)).wrap(WRAP_MAX_LENGTH)
         val message = messageFormatParser.parse(logMessage.copy(tag = "", message = logMessage.message))
         when (logMessage.level) {

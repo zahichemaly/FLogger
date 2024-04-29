@@ -5,9 +5,6 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.storage.storage
 import com.google.firebase.storage.storageMetadata
-import com.zc.flogger.LOG_FILE_DATE_FORMAT
-import com.zc.flogger.LOG_FILE_PATH
-import com.zc.flogger.MAX_FILES_ALLOWED
 import com.zc.flogger.TAG
 import com.zc.flogger.extensions.toFormat
 import com.zc.flogger.format.FormatParser
@@ -29,16 +26,19 @@ import java.util.Date
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-internal class FileLogger(private val context: Context, private val format: String) : BaseLogger() {
+internal class FileLogger(
+    private val context: Context,
+    logFormat: String = DEFAULT_LOG_FORMAT,
+) : Logger {
 
-    var applicationTag: String = ""
-    var logsFilePath: String = LOG_FILE_PATH
-    var maxFilesAllowed: Int = MAX_FILES_ALLOWED
-    var fileRetentionPolicy: FileRetentionPolicy = FileRetentionPolicy.FIXED
+    private var fileTag: String = DEFAULT_FILE_TAG
+    private var logsFilePath: String = LOGS_FILE_PATH
+    private var fileRetentionPolicy: FileRetentionPolicy = FileRetentionPolicy.FIXED
+    private var maxFilesAllowed: Int = MAX_FILES_ALLOWED
 
     private var logHeaderLines: List<String> = emptyList()
 
-    private val formatParser = FormatParser(format)
+    private val logFormatParser = FormatParser(logFormat)
 
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, ex ->
@@ -53,7 +53,7 @@ internal class FileLogger(private val context: Context, private val format: Stri
         }
     }
 
-    override fun handle(logMessage: LogMessage) {
+    override fun log(logMessage: LogMessage) {
         val result = channel.trySend(logMessage)
         if (!result.isSuccess) {
             Log.e(TAG, "Failed to send log message $logMessage")
@@ -61,7 +61,7 @@ internal class FileLogger(private val context: Context, private val format: Stri
     }
 
     private fun buildLog(logMessage: LogMessage): String {
-        return formatParser.parse(logMessage)
+        return logFormatParser.parse(logMessage)
     }
 
     private fun logInternal(logMessage: LogMessage) {
@@ -77,7 +77,7 @@ internal class FileLogger(private val context: Context, private val format: Stri
         "${context.externalCacheDir}/$logsFilePath"
 
     private fun getLogFileName(): String =
-        "${applicationTag}_${Date().toFormat(LOG_FILE_DATE_FORMAT)}"
+        "${fileTag}_${Date().toFormat(DEFAULT_FILE_DATE_FORMAT)}"
 
     @Throws
     private fun getExistingLogFileOrCreate(): File {
@@ -173,5 +173,14 @@ internal class FileLogger(private val context: Context, private val format: Stri
         } ?: run {
             onError.invoke(IOException("Zip file is invalid or does not exist."))
         }
+    }
+
+    companion object {
+        private const val DEFAULT_FILE_TAG = "FLogger_"
+        private const val DEFAULT_FILE_DATE_FORMAT = "yyyy-MM-dd"
+        private const val DEFAULT_LOG_FORMAT = "%date{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%tag]: %message"
+
+        private const val LOGS_FILE_PATH = "logs"
+        private const val MAX_FILES_ALLOWED = 10
     }
 }

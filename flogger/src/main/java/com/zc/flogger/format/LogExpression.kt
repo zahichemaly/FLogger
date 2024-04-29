@@ -3,7 +3,6 @@ package com.zc.flogger.format
 import com.zc.flogger.DEFAULT_DATE_FORMAT
 import com.zc.flogger.WRAP_LENGTH_DISABLED
 import com.zc.flogger.extensions.toFormat
-import com.zc.flogger.extensions.wrap
 import com.zc.flogger.models.LogMessage
 
 /**
@@ -48,7 +47,8 @@ internal sealed interface LogExpression {
         }
     }
 
-    data class Thread(private val format: String) : LogExpression {
+    data class ThreadInfo(private val format: String) : LogExpression {
+
         override fun interpret(logMessage: LogMessage): String {
             return when (format) {
                 "id" -> logMessage.thread.id.toString()
@@ -58,33 +58,35 @@ internal sealed interface LogExpression {
         }
     }
 
-    data class ClassName(private val maxLength: Int = WRAP_LENGTH_DISABLED, private val format: String) : LogExpression {
+    data class ClassName(private val format: String) : LogExpression {
 
         override fun interpret(logMessage: LogMessage): String {
-            val fullClassName = logMessage.activeStackTraceElement.className
+            // example: FormatParser$parse$1
+            // in this case, parse the $ signs
+            val fullClassName = logMessage.mainStackTraceElement?.className ?: ""
             return when (format) {
-                "full" -> logMessage.activeStackTraceElement.className.wrap(maxLength)
-                "simple" -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1).wrap(maxLength)
-                else -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1).wrap(maxLength)
+                "full" -> fullClassName
+                "simple" -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
+                else -> fullClassName.substring(fullClassName.lastIndexOf(".") + 1)
             }
         }
     }
 
     data class FileName(private val maxLength: Int = WRAP_LENGTH_DISABLED) : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
-            return logMessage.activeStackTraceElement.fileName.wrap(maxLength)
+            return logMessage.mainStackTraceElement?.fileName ?: ""
         }
     }
 
     data class MethodName(private val maxLength: Int = WRAP_LENGTH_DISABLED) : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
-            return logMessage.activeStackTraceElement.methodName.wrap(maxLength)
+            return logMessage.mainStackTraceElement?.methodName ?: ""
         }
     }
 
     data object LineNumber : LogExpression {
         override fun interpret(logMessage: LogMessage): String {
-            return logMessage.activeStackTraceElement.lineNumber.toString()
+            return logMessage.mainStackTraceElement?.lineNumber?.toString() ?: ""
         }
     }
 }
