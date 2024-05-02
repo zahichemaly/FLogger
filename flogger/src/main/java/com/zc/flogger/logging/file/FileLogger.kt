@@ -1,13 +1,12 @@
-package com.zc.flogger.logging
+package com.zc.flogger.logging.file
 
-import android.content.Context
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.storage.storage
 import com.google.firebase.storage.storageMetadata
 import com.zc.flogger.TAG
-import com.zc.flogger.extensions.toFormat
 import com.zc.flogger.format.FormatParser
+import com.zc.flogger.logging.base.BaseLogger
 import com.zc.flogger.models.LogMessage
 import com.zc.flogger.utils.FirebaseUtils
 import com.zc.flogger.utils.ZipManager
@@ -21,24 +20,15 @@ import java.io.BufferedWriter
 import java.io.File
 import java.io.FileWriter
 import java.io.IOException
-import java.util.Date
 
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-internal class FileLogger(
-    private val context: Context,
-    logFormat: String = DEFAULT_LOG_FORMAT,
-) : Logger {
-
-    private var fileTag: String = DEFAULT_FILE_TAG
-    private var logsFilePath: String = LOGS_FILE_PATH
-    private var fileRetentionPolicy: FileRetentionPolicy = FileRetentionPolicy.FIXED
-    private var maxFilesAllowed: Int = MAX_FILES_ALLOWED
+internal class FileLogger(val config: FileLoggerConfig) : BaseLogger(config) {
 
     private var logHeaderLines: List<String> = emptyList()
 
-    private val logFormatParser = FormatParser(logFormat)
+    private val logFormatParser = FormatParser(config.logFormat)
 
     private val mainScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
     private val coroutineExceptionHandler = CoroutineExceptionHandler { _, ex ->
@@ -73,16 +63,10 @@ internal class FileLogger(
         }
     }
 
-    private fun getLogPath(): String =
-        "${context.externalCacheDir}/$logsFilePath"
-
-    private fun getLogFileName(): String =
-        "${fileTag}_${Date().toFormat(DEFAULT_FILE_DATE_FORMAT)}"
-
     @Throws
     private fun getExistingLogFileOrCreate(): File {
         // configure log folder if it does not exist
-        val logPath = getLogPath()
+        val logPath = config.getLogPath()
         val logFolder = File(logPath)
         if (!logFolder.exists()) {
             Log.d(TAG, "Create log folder $logPath")
@@ -90,16 +74,16 @@ internal class FileLogger(
         }
 
         // configure log file if it does not exist
-        val logFileName = getLogFileName() + ".log"
+        val logFileName = config.getLogFileName() + ".log"
         val logFile = File(logPath, logFileName)
 
         if (!logFile.exists()) {
             val files = logFolder.listFiles() ?: arrayOf()
             val filesCount = files.size
-            Log.d(TAG, "Log files found: $filesCount / $maxFilesAllowed")
+            Log.d(TAG, "Log files found: $filesCount / ${config.maxFilesAllowed}")
 
-            if (fileRetentionPolicy != FileRetentionPolicy.DISABLED) {
-                if (fileRetentionPolicy == FileRetentionPolicy.LATEST_ONLY || filesCount == maxFilesAllowed) {
+            if (config.fileRetentionPolicy != FileRetentionPolicy.DISABLED) {
+                if (config.fileRetentionPolicy == FileRetentionPolicy.LATEST_ONLY || filesCount == config.maxFilesAllowed) {
                     val oldestFile = files.minByOrNull { it.lastModified() }
                     val isDeleted = oldestFile?.delete()
                     if (isDeleted == true) {
@@ -138,49 +122,5 @@ internal class FileLogger(
             buf.append(message)
             buf.newLine()
         }
-    }
-
-    fun zipLogs(): File? {
-        return ZipManager.zipFolder(getLogPath(), context.externalCacheDir.toString(), getLogFileName())
-    }
-
-    fun uploadToFirebaseStorage(
-        firebaseFolder: String,
-        onLoading: () -> Unit = {},
-        onSuccess: () -> Unit = {},
-        onError: (Exception) -> Unit = {},
-    ) {
-        if (!FirebaseUtils.isFirebaseInitialized()) return
-        zipLogs()?.let { file ->
-            val storage = Firebase.storage
-            val storageRef = storage.reference
-            val fileName = file.name
-            val fileRef = storageRef.child("$firebaseFolder/$fileName")
-            val metadata = storageMetadata {
-                contentType = "application/zip"
-            }
-            file.inputStream().use { inputStream ->
-                onLoading.invoke()
-                val task = fileRef.putStream(inputStream, metadata)
-                task.addOnSuccessListener {
-                    Log.d(TAG, "Upload successful")
-                    onSuccess.invoke()
-                }.addOnFailureListener { ex ->
-                    Log.e(TAG, "Upload successful")
-                    onError.invoke(ex)
-                }
-            }
-        } ?: run {
-            onError.invoke(IOException("Zip file is invalid or does not exist."))
-        }
-    }
-
-    companion object {
-        private const val DEFAULT_FILE_TAG = "FLogger_"
-        private const val DEFAULT_FILE_DATE_FORMAT = "yyyy-MM-dd"
-        private const val DEFAULT_LOG_FORMAT = "%date{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%tag]: %message"
-
-        private const val LOGS_FILE_PATH = "logs"
-        private const val MAX_FILES_ALLOWED = 10
     }
 }

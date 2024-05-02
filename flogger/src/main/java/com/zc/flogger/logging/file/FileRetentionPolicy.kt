@@ -1,4 +1,4 @@
-package com.zc.flogger.logging
+package com.zc.flogger.logging.file
 
 /**
  * Created by Zahi Chemaly on 4/26/2024.

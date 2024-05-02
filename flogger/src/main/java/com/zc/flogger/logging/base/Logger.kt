@@ -1,4 +1,4 @@
-package com.zc.flogger.logging
+package com.zc.flogger.logging.base
 
 import com.zc.flogger.models.LogMessage
 

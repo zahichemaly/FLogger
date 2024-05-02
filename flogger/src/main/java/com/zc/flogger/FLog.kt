@@ -1,11 +1,20 @@
 package com.zc.flogger
 
-import android.content.Context
-import com.zc.flogger.logging.ConsoleLogger
-import com.zc.flogger.logging.FileLogger
-import com.zc.flogger.logging.Logger
+import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.storage.storage
+import com.google.firebase.storage.storageMetadata
+import com.zc.flogger.logging.base.Logger
+import com.zc.flogger.logging.console.ConsoleLogger
+import com.zc.flogger.logging.console.ConsoleLoggerConfig
+import com.zc.flogger.logging.file.FileLogger
+import com.zc.flogger.logging.file.FileLoggerConfig
 import com.zc.flogger.models.LogLevel
 import com.zc.flogger.models.LogMessage
+import com.zc.flogger.utils.FirebaseUtils
+import com.zc.flogger.utils.ZipManager
+import java.io.File
+import java.io.IOException
 
 /**
  * Created by Zahi Chemaly on 4/25/2024.
@@ -15,13 +24,13 @@ object FLog {
 
     class Configuration {
 
-        fun withFileLogger(context: Context, format: String): Configuration {
-            loggers.add(FileLogger(context, format))
+        fun withFileLogger(config: FileLoggerConfig): Configuration {
+            loggers.add(FileLogger(config))
             return this
         }
 
-        fun withConsoleLogger(tagFormat: String, messageFormat: String): Configuration {
-            loggers.add(ConsoleLogger(tagFormat, messageFormat))
+        fun withConsoleLogger(config: ConsoleLoggerConfig): Configuration {
+            loggers.add(ConsoleLogger(config))
             return this
         }
     }
@@ -52,6 +61,47 @@ object FLog {
         )
 
         loggers.forEach { logger -> logger.log(logMessage) }
+    }
+
+    fun zipLogs(): File? {
+        return loggers.filterIsInstance<FileLogger>().firstOrNull()?.config?.run {
+            return ZipManager.zipFolder(
+                getLogPath(),
+                context.externalCacheDir.toString(),
+                getLogFileName()
+            )
+        }
+    }
+
+    fun uploadToFirebaseStorage(
+        firebaseFolder: String,
+        onLoading: () -> Unit = {},
+        onSuccess: () -> Unit = {},
+        onError: (Exception) -> Unit = {},
+    ) {
+        if (!FirebaseUtils.isFirebaseInitialized()) return
+        zipLogs()?.let { file ->
+            val storage = Firebase.storage
+            val storageRef = storage.reference
+            val fileName = file.name
+            val fileRef = storageRef.child("$firebaseFolder/$fileName")
+            val metadata = storageMetadata {
+                contentType = "application/zip"
+            }
+            file.inputStream().use { inputStream ->
+                onLoading.invoke()
+                val task = fileRef.putStream(inputStream, metadata)
+                task.addOnSuccessListener {
+                    Log.d(TAG, "Upload successful")
+                    onSuccess.invoke()
+                }.addOnFailureListener { ex ->
+                    Log.e(TAG, "Upload successful")
+                    onError.invoke(ex)
+                }
+            }
+        } ?: run {
+            onError.invoke(IOException("Zip file is invalid or does not exist."))
+        }
     }
 
     fun verb(tag: String, message: String) = log(tag, message, LogLevel.VERBOSE)
