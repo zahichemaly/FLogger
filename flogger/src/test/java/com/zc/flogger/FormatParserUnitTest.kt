@@ -28,6 +28,20 @@ class FormatParserUnitTest {
     }
 
     @Test
+    fun is_date_default_format_correct() {
+        val tag = "API"
+        val message = "This is a log test"
+        val date = Date().toFormat(DEFAULT_DATE_FORMAT)
+
+        val logMessage = LogMessage(tag, message)
+        val logFormat = "%date [MYAPP] [%tag] {1}: %message"
+        val actual = FormatParser(logFormat).parse(logMessage)
+
+        val expected = "$date [MYAPP] [$tag] {1}: $message"
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun is_invalid_format_a_literal() {
         val tag = "API"
         val message = "This is a log test"
@@ -78,7 +92,7 @@ class FormatParserUnitTest {
         val level = LogLevel.INFO
 
         val logMessage = LogMessage(tag, message, level)
-        val logFormat = "[%linenumber]: %message"
+        val logFormat = "[%tag] [%level{name}]: %message"
         val actual = FormatParser(logFormat).parse(logMessage)
 
         val expected = "[$tag] [${level.name}]: $message"

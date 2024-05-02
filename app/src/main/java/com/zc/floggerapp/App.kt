@@ -12,7 +12,7 @@ class App : Application() {
         super.onCreate()
         FLog.Configuration()
             .withConsoleLogger("%tag(Line:%linenumber)", "[%classname] [%filename] %message")
-            .withFileLogger(this, "%date{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%tag] {%filename}: %message")
+            .withFileLogger(this, "%date{yyyy-MM-dd HH:mm:ss.SSS} [%level{name}] [%tag] {%filename;%linenumber}: %message")
         //logger.zipLogs()
         //FLog.uploadToFirebaseStorage("public")
         repeat(10) {
