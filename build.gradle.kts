@@ -9,7 +9,7 @@ plugins {
     `java-library`
     `maven-publish`
     signing
-    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 val props by lazy {
@@ -62,6 +62,7 @@ nexusPublishing {
         create("myNexus") {
             nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
             snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+            stagingProfileId.set(props["sonatypeStagingProfileId"])
             username.set(props["myNexusUsername"])
             password.set(props["myNexusPassword"])
         }
@@ -69,5 +70,9 @@ nexusPublishing {
 }
 
 signing {
+//    val signingKeyId = props["signing.keyId"]
+//    val signingKey = props["signing.secretKeyRingFile"]
+//    val signingPassword = props["signing.password"]
+//    useInMemoryPgpKeys(signingKeyId, signingKey, signingPassword)
     sign(publishing.publications["mavenJava"])
 }
