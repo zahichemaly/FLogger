@@ -63,6 +63,10 @@ object FLog {
         loggers.forEach { logger -> logger.log(logMessage) }
     }
 
+    /**
+     * Create a zipped file of the current logs located at [FileLoggerConfig.logsFilePath]
+     * in the external cache folder.
+     */
     fun zipLogs(): File? {
         return loggers.filterIsInstance<FileLogger>().firstOrNull()?.config?.run {
             return ZipManager.zipFolder(
@@ -73,6 +77,10 @@ object FLog {
         }
     }
 
+    /**
+     * Zips and uploads the zipped file to Firebase Cloud Storage,
+     * in the [firebaseFolder] container.
+     */
     fun uploadToFirebaseStorage(
         firebaseFolder: String,
         onLoading: () -> Unit = {},
