@@ -19,7 +19,7 @@ import java.io.IOException
 /**
  * Created by Zahi Chemaly on 4/25/2024.
  */
-object FLog {
+object FLog : Logging, LoggingMinimal {
     private val loggers = mutableListOf<Logger>()
 
     class Configuration {
@@ -112,15 +112,27 @@ object FLog {
         }
     }
 
-    fun verb(tag: String, message: String) = log(tag, message, LogLevel.VERBOSE)
+    override fun verb(tag: String, message: String) = log(tag, message, LogLevel.VERBOSE)
 
-    fun debug(tag: String, message: String) = log(tag, message, LogLevel.DEBUG)
+    override fun debug(tag: String, message: String) = log(tag, message, LogLevel.DEBUG)
 
-    fun info(tag: String, message: String) = log(tag, message, LogLevel.INFO)
+    override fun info(tag: String, message: String) = log(tag, message, LogLevel.INFO)
 
-    fun warn(tag: String, message: String) = log(tag, message, LogLevel.WARNING)
+    override fun warn(tag: String, message: String) = log(tag, message, LogLevel.WARNING)
 
-    fun error(tag: String, message: String) = log(tag, message, LogLevel.ERROR)
+    override fun error(tag: String, message: String) = log(tag, message, LogLevel.ERROR)
 
-    fun fatal(tag: String, message: String) = log(tag, message, LogLevel.FATAL)
+    override fun fatal(tag: String, message: String) = log(tag, message, LogLevel.FATAL)
+
+    override fun verb(message: String) = log("", message, LogLevel.VERBOSE)
+
+    override fun debug(message: String) = log("", message, LogLevel.DEBUG)
+
+    override fun info(message: String) = log("", message, LogLevel.INFO)
+
+    override fun warn(message: String) = log("", message, LogLevel.WARNING)
+
+    override fun error(message: String) = log("", message, LogLevel.ERROR)
+
+    override fun fatal(message: String) = log("", message, LogLevel.FATAL)
 }

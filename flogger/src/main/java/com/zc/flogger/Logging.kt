@@ -12,7 +12,6 @@ internal interface Logging {
     fun fatal(tag: String, message: String)
 }
 
-
 internal interface LoggingMinimal {
     fun verb(message: String)
     fun debug(message: String)

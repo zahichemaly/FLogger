@@ -16,7 +16,7 @@ class App : Application() {
             .withConsoleLogger(
                 ConsoleLoggerConfig(
                     tagFormat = "%tag(Line:%linenumber)",
-                    messageFormat = "[%classname] [%filename] %message"
+                    messageFormat = "[%classname{simple}] [%filename] %message"
                 )
             )
             .withFileLogger(
@@ -26,7 +26,7 @@ class App : Application() {
                 )
             )
         repeat(10) {
-            FLog.debug("MYAPP", "Test log $it")
+            FLog.debug("Test log $it")
         }
     }
 }
