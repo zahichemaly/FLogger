@@ -77,7 +77,7 @@ Example:
 ```
 FLog.Configuration()
   .withConsoleLogger(...)
-  .withConsoleLogger(...)
+  .withFileLogger(...)
 ```
 
 ### Log Formats
@@ -87,10 +87,10 @@ FLog.Configuration()
 |`%message`|Logs the message provided as argument when using `FLog.debug(...,"My message")`|
 |`%date{date_format}`|Logs the current date, formatted using the specified format.<br>Defaults to `dd-MM-yyyy-HH:mm:ss` if not provided/invalid|
 |`%level{type}`|Logs the log level using the provided level type:<br>- `number` (0 = Verbose, 1 = Debug...)<br>- `letter` (V, D, W, E...)<br>- `name` (DEBUG, INFO...).<br>Defaults to `number` if not provided/invalid.|
-|`%thead{type}`|Logs info about the thread.<br>- `id` logs the thread ID.<br>- `name` logs the thread name.<br>Defaults to `id` if not provided/invalid.
+|`%thread{type}`|Logs info about the thread.<br>- `id` logs the thread ID.<br>- `name` logs the thread name.<br>Defaults to `id` if not provided/invalid.
 |`%classname{type}`|Logs the classname.<br>- `full` logs the full class name, including the package.<br>- `simple` only logs the class name.<br>Defaults to `full`.
-|`%filename{wrapLimit}`|Logs the file name. If wrap limit is provided, truncate the string based on the value.|
-|`%methodname{wrapLimit}`|Logs the method name. If wrap limit is provided, truncate the string based on the value.|
+|`%filename{wrap_limit}`|Logs the file name. If wrap limit is provided, truncate the string based on the value.|
+|`%methodname{wrap_limit}`|Logs the method name. If wrap limit is provided, truncate the string based on the value.|
 |`%linenumber`|Logs the line number of the `FLog` function call.|
 
 ### Archive the logs
